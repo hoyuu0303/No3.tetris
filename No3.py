@@ -7,7 +7,7 @@ COLS = 10
 ROWS = 20
 DELAY = 500  # ms
 TIME_LIMIT = 300  # 秒（5分）
-GOAL_SCORE = 10000
+GOAL_SCORE = 3000
 
 TETROMINOS = {
     'I': [[1, 1, 1, 1]],
@@ -29,10 +29,20 @@ class Tetris:
     def __init__(self, root):
         self.root = root
         self.root.title("Tetris")
-        self.canvas = tk.Canvas(root, width=COLS * CELL_SIZE + 150, height=ROWS * CELL_SIZE, bg='black')
+        self.canvas = tk.Canvas(root, width=COLS * CELL_SIZE + 170, height=ROWS * CELL_SIZE, bg='black')
         self.canvas.pack()
-
+        # 最大化禁止
+        root.resizable(False, False)
+        
         self.start_button = tk.Button(root, text="Start Game", font=("Helvetica", 16), command=self.start_game)
+        # Canvasに固定位置でボタンを配置（x=中央, y=中央）
+        self.start_button_window = self.canvas.create_window(
+          COLS * CELL_SIZE // 2,  # x 座標（Canvas中央）
+          ROWS * CELL_SIZE // 2,  # y 座標（Canvas中央）
+          window=self.start_button
+          
+          )
+
         self.start_button.place(x=COLS * CELL_SIZE + 25, y=ROWS * CELL_SIZE // 2)
 
         self.restart_button = None
@@ -140,7 +150,7 @@ class Tetris:
                 self.root.update()
                 time.sleep(0.1)
                 self.clear_lines()
-                
+
                 self.spawn_block()
         self.draw_board()
         if not self.game_over_flag and not self.game_clear_flag:
@@ -185,12 +195,22 @@ class Tetris:
         self.score += lines_cleared * 100
 
     def rotate_block(self):
-        rotated = list(zip(*self.block[::-1]))
+        rotated = list(zip(*self.block[::-1]))#⇒
         original = self.block
         self.block = [list(row) for row in rotated]
         if self.check_collision():
             self.block = original
-
+    #逆回転の実装
+    def reverse_rotate_block(self):
+    # 反時計回り：転置して、列を逆にする
+        rotated = list(zip(*self.block))[::-1]#←
+        original = self.block
+        self.block = [list(row) for row in rotated]
+        if self.check_collision():
+            self.block = original
+        #if self.valid_move(self.current_pos[0], self.current_pos[1], rotated):
+           #self.block = rotated
+   #ミノの回転
     def key_pressed(self, event):
         if self.game_over_flag or self.game_clear_flag:
             return
@@ -198,10 +218,12 @@ class Tetris:
             self.move_block(0, -1)
         elif event.keysym == 'Right':
             self.move_block(0, 1)
-        elif event.keysym == 'Down':
-            self.move_block(1, 0)
-        elif event.keysym == 'Up':
+        elif event.keysym == 'Down':#左回転
+            self.reverse_rotate_block()
+        elif event.keysym == 'Up':#右回転
             self.rotate_block()
+        elif event.keysym == "space":
+            self.move_block(1, 0) # 落下
         self.draw_board()
 
     def show_restart_button(self):
